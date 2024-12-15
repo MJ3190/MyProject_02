@@ -1,31 +1,40 @@
-const fetch = require('node-fetch');
+const fetch = require("node-fetch");
 
-exports.handler = async (event, context) => {
-  const apiKey = process.env.OPENAI_API_KEY; // Access the env variable
-  
-  // Prepare a request to the OpenAI API
-  const prompt = "Write a short greeting message";
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: "gpt-3.5-turbo",
-      messages: [{role: "user", content: prompt}],
-      max_tokens: 50,
-      temperature: 0.7
-    })
-  });
+exports.handler = async (event) => {
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-  const data = await response.json();
+    try {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${OPENAI_API_KEY}`,
+            },
+            body: JSON.stringify({
+                model: "gpt-4", // Replace with "gpt-3.5-turbo" if needed
+                messages: [{ role: "user", content: "Hello, what is 2+2?" }],
+                max_tokens: 50,
+            }),
+        });
 
-  // Extract the generated text from the response
-  const generatedText = data.choices && data.choices[0]?.message?.content || "No response";
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("API error:", errorText);
+            return { statusCode: response.status, body: `OpenAI API Error: ${errorText}` };
+        }
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ message: generatedText })
-  };
+        const data = await response.json();
+        console.log("API Response:", data);
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ message: data.choices[0]?.message?.content || "No content" }),
+        };
+    } catch (error) {
+        console.error("Function error:", error);
+        return {
+            statusCode: 500,
+            body: `Function Error: ${error.message}`,
+        };
+    }
 };
