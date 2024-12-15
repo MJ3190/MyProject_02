@@ -1,10 +1,13 @@
 const fetch = require('node-fetch'); // Import node-fetch
 
-exports.handler = async () => {
+exports.handler = async (event) => {
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // Get API key from Netlify env variables
-  const apiUrl = 'https://api.openai.com/v1/chat/completions'; // Endpoint for chat completions
+  const apiUrl = 'https://api.openai.com/v1/chat/completions'; // OpenAI endpoint
 
   try {
+    // Parse user input (from query string or body)
+    const userPrompt = event.queryStringParameters.prompt || "Hello!";
+    
     // OpenAI API request payload
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -15,16 +18,10 @@ exports.handler = async () => {
       body: JSON.stringify({
         model: "gpt-4o", // Specify GPT-4o model
         messages: [
-          {
-            role: "system",
-            content: "You are a helpful assistant."
-          },
-          {
-            role: "user",
-            content: "What is 2 + 2?"
-          }
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: userPrompt }
         ],
-        max_tokens: 50 // Adjust output length
+        max_tokens: 150 // Adjust output length
       })
     });
 
