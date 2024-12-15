@@ -1,40 +1,46 @@
-const fetch = require("node-fetch");
+const fetch = require('node-fetch'); // Import node-fetch
 
-exports.handler = async (event) => {
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+exports.handler = async () => {
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // Get API key from Netlify env variables
+  const apiUrl = 'https://api.openai.com/v1/chat/completions'; // Endpoint for chat completions
 
-    try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${OPENAI_API_KEY}`,
-            },
-            body: JSON.stringify({
-                model: "gpt-4.0", // Replace with "gpt-3.5-turbo" if needed
-                messages: [{ role: "user", content: "Hello, what is 2+2?" }],
-                max_tokens: 50,
-            }),
-        });
+  try {
+    // OpenAI API request payload
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o", // Specify GPT-4o model
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful assistant."
+          },
+          {
+            role: "user",
+            content: "What is 2 + 2?"
+          }
+        ],
+        max_tokens: 50 // Adjust output length
+      })
+    });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("API error:", errorText);
-            return { statusCode: response.status, body: `OpenAI API Error: ${errorText}` };
-        }
+    const data = await response.json();
 
-        const data = await response.json();
-        console.log("API Response:", data);
+    // Return the result from OpenAI
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: data.choices[0].message.content.trim() })
+    };
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ message: data.choices[0]?.message?.content || "No content" }),
-        };
-    } catch (error) {
-        console.error("Function error:", error);
-        return {
-            statusCode: 500,
-            body: `Function Error: ${error.message}`,
-        };
-    }
+  } catch (error) {
+    // Return error message
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Failed to generate content", details: error.message })
+    };
+  }
 };
